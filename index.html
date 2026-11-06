@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
@@ -77,18 +77,26 @@ body {
 }
 
 #status-notice {
-	background-color: #5b3943;
-	border-radius: 0.5rem;
-	border: 1px solid #9b3943;
-	color: #e0e0e0;
+	background-color: #f1e9d8;
+	border-radius: 0.75rem;
+	border: 3px solid #54402a;
+	color: #33281a;
+	max-width: 34rem;
+	max-height: 90vh;
+	overflow-y: auto;
+	text-align: left;
 	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
 	line-height: 1.3;
 	margin: 0 2rem;
-	overflow: hidden;
-	padding: 1rem;
-	text-align: center;
+	padding: 1rem 1.25rem;
 	z-index: 1;
 }
+
+#status-notice h2 { font-size: 1.15rem; margin: 0 0 0.5rem; }
+#status-notice ol { margin: 0.4rem 0 0.8rem 1.2rem; padding: 0; }
+#status-notice li { margin: 0.2rem 0; }
+#status-notice code { background: #e2d6bd; border-radius: 0.25rem; padding: 0 0.25rem; }
+#status-notice .other-lang { border-top: 1px solid #bfae8e; margin-top: 0.8rem; padding-top: 0.6rem; font-size: 0.9rem; opacity: 0.85; }
 		</style>
 		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
@@ -111,7 +119,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":217324,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":236836,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -160,6 +168,59 @@ const engine = new Engine(GODOT_CONFIG);
 		}
 		setStatusMode('notice');
 		initializing = false;
+	}
+
+	// Yayla (F14): a calm, bilingual explanation when the browser has no WebGL 2
+	// (usually hardware acceleration is off), instead of a raw "WebGL2 missing".
+	function hasWebGL2() {
+		try {
+			const c = document.createElement('canvas');
+			return !!(window.WebGL2RenderingContext && c.getContext('webgl2'));
+		} catch (e) {
+			return false;
+		}
+	}
+
+	const WEBGL2_HELP = {
+		tr: {
+			title: 'Tarayıcın şu an 3D çizemiyor (WebGL 2 kapalı)',
+			intro: 'Yayla bilgisayarının ekran kartını kullanır. Çoğu zaman tek bir ayar yeter:',
+			steps: [
+				'Chrome / Edge: Ayarlar → Sistem → <b>Kullanılabilir olduğunda grafik hızlandırmayı kullan</b> seçeneğini aç.',
+				'Tarayıcıyı tamamen kapatıp yeniden aç, sonra bu sayfayı yenile.',
+				'Hâlâ olmazsa <code>chrome://gpu</code> sayfasında "WebGL2" satırına bak; ya da Firefox ile dene.',
+				'Telefonda: tarayıcını güncelle; düşük güç modunu kapatmak da yardımcı olabilir.',
+			],
+			outro: 'Acele yok — çay demlenirken bir kez denemen yeter.',
+		},
+		en: {
+			title: 'Your browser can\'t draw 3D right now (WebGL 2 is off)',
+			intro: 'Yayla uses your graphics card. Usually one setting fixes it:',
+			steps: [
+				'Chrome / Edge: Settings → System → turn on <b>Use graphics acceleration when available</b>.',
+				'Fully close and reopen the browser, then reload this page.',
+				'Still nothing? Check the "WebGL2" line on <code>chrome://gpu</code>, or try Firefox.',
+				'On a phone: update your browser; turning off battery saver can help too.',
+			],
+			outro: 'No rush — one try while the tea brews is enough.',
+		},
+	};
+
+	function showWebGL2Help() {
+		const first = (navigator.language || 'tr').toLowerCase().startsWith('tr') ? 'tr' : 'en';
+		const second = first === 'tr' ? 'en' : 'tr';
+		const block = (t, cls) => {
+			const steps = t.steps.map((s) => `<li>${s}</li>`).join('');
+			return `<div class="${cls}"><h2>${t.title}</h2><p>${t.intro}</p><ol>${steps}</ol><p>${t.outro}</p></div>`;
+		};
+		statusNotice.innerHTML = block(WEBGL2_HELP[first], '') + block(WEBGL2_HELP[second], 'other-lang');
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	if (!hasWebGL2()) {
+		showWebGL2Help();
+		return;
 	}
 
 	const missing = Engine.getMissingFeatures({
